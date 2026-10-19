@@ -1,12 +1,271 @@
-[
-  {
-    "slug": "example-article",
-    "title_en": "Example: Understanding a Political Issue",
-    "title_hi": "उदाहरण: एक राजनीतिक मुद्दे को समझना",
-    "thumbnail": "/assets/placeholder.svg",
-    "date": "2026-10-19",
-    "tags": ["analysis","india"],
-    "excerpt_en": "A short summary of the example article in English.",
-    "excerpt_hi": "हिंदी में संक्षिप्त सारांश।"
+const CONFIG_PATH = '/site-config.json';
+const POSTS_PATH = '/posts/index.json';
+let config = {};
+let posts = [];
+let editingSlug = null;
+
+async function loadState() {
+  try {
+    config = await fetch(CONFIG_PATH).then(r => r.json());
+  } catch (e) {
+    config = { siteTitle: 'AmitKT', siteSubtitle: 'Indian Politics', defaultAuthor: 'Amit', admin_password: 'admin', default_language: 'en', headerImage: '/assets/placeholder.svg' };
   }
-]
+
+  try {
+    posts = await fetch(POSTS_PATH).then(r => r.json());
+  } catch (e) {
+    posts = [];
+  }
+
+  populateSettings();
+  renderPostList();
+}
+
+function populateSettings() {
+  document.getElementById('cfg-title').value = config.siteTitle || 'AmitKT';
+  document.getElementById('cfg-subtitle').value = config.siteSubtitle || 'Indian Politics';
+  document.getElementById('cfg-author').value = config.defaultAuthor || 'Amit';
+  document.getElementById('cfg-header-image').value = config.headerImage || '/assets/placeholder.svg';
+  document.getElementById('cfg-password').value = config.admin_password || 'admin';
+  document.getElementById('cfg-language').value = config.default_language || 'en';
+  document.getElementById('cfg-ad').value = config.ad_code || '';
+}
+
+function renderPostList() {
+  const listEl = document.getElementById('post-list');
+  listEl.innerHTML = '';
+  posts.forEach(post => {
+    const row = document.createElement('div');
+    row.className = 'post-item';
+    row.innerHTML = `
+      <div>
+        <strong>${post.title_en || post.slug}</strong><br>
+        <span class="muted">${post.category || 'National'} • ${post.date || ''}</span>
+      </div>
+      <button class="btn secondary" data-edit="${post.slug}">Edit</button>
+    `;
+    row.querySelector('[data-edit]').addEventListener('click', () => openEditor(post.slug));
+    listEl.appendChild(row);
+  });
+}
+
+function openEditor(slug) {
+  const post = posts.find(p => p.slug === slug);
+  if (!post) return;
+  editingSlug = slug;
+  document.getElementById('editor-panel').classList.remove('hidden');
+  document.getElementById('editor-title').textContent = `Edit: ${post.title_en || slug}`;
+  document.getElementById('post-slug').value = post.slug || '';
+  document.getElementById('post-category').value = post.category || 'National';
+  document.getElementById('post-title-en').value = post.title_en || '';
+  document.getElementById('post-title-hi').value = post.title_hi || '';
+  document.getElementById('post-thumb').value = post.thumbnail || '';
+  document.getElementById('post-date').value = post.date || '';
+  document.getElementById('post-excerpt-en').value = post.excerpt_en || '';
+  document.getElementById('post-excerpt-hi').value = post.excerpt_hi || '';
+  fetch(`/posts/${slug}.en.md`).then(r => r.text()).then(t => document.getElementById('post-body-en').value = t).catch(() => {});
+  fetch(`/posts/${slug}.hi.md`).then(r => r.text()).then(t => document.getElementById('post-body-hi').value = t).catch(() => {});
+}
+
+function newPost() {
+  editingSlug = null;
+  document.getElementById('editor-panel').classList.remove('hidden');
+  document.getElementById('editor-title').textContent = 'New article';
+  ['post-slug','post-category','post-title-en','post-title-hi','post-thumb','post-date','post-excerpt-en','post-excerpt-hi','post-body-en','post-body-hi'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el.tagName === 'SELECT') el.value = 'National';
+    else el.value = '';
+  });
+}
+
+function saveSettings() {
+  const next = {
+    siteTitle: document.getElementById('cfg-title').value || 'AmitKT',
+    siteSubtitle: document.getElementById('cfg-subtitle').value || 'Indian Politics',
+    defaultAuthor: document.getElementById('cfg-author').value || 'Amit',
+    headerImage: document.getElementById('cfg-header-image').value || '/assets/placeholder.svg',
+    admin_password: document.getElementById('cfg-password').value || 'admin',
+    default_language: document.getElementById('cfg-language').value || 'en',
+    ad_code: document.getElementById('cfg-ad').value || ''
+  };
+  config = next;
+  downloadTextFile('site-config.json', JSON.stringify(next, null, 2));
+  alert('Settings prepared. Use GitHub commit or manually push the file.');
+}
+
+function downloadTextFile(filename, content) {
+  const blob = new Blob([content], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function getCurrentPostData() {
+  const slug = document.getElementById('post-slug').value.trim();
+  if (!slug) throw new Error('Slug is required');
+  return {
+    slug,
+    category: document.getElementById('post-category').value,
+    title_en: document.getElementById('post-title-en').value.trim(),
+    title_hi: document.getElementById('post-title-hi').value.trim(),
+    thumbnail: document.getElementById('post-thumb').value.trim(),
+    date: document.getElementById('post-date').value.trim() || new Date().toISOString().slice(0, 10),
+    excerpt_en: document.getElementById('post-excerpt-en').value.trim(),
+    excerpt_hi: document.getElementById('post-excerpt-hi').value.trim(),
+    featured: posts.length === 0
+  };
+}
+
+function previewPost() {
+  try {
+    const data = getCurrentPostData();
+    const body = document.getElementById('post-body-en').value || document.getElementById('post-body-hi').value || '';
+    document.getElementById('preview-box').innerHTML = `
+      <h3>${data.title_en || data.slug}</h3>
+      <div>${marked.parse(body)}</div>
+    `;
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+function deletePost() {
+  if (!editingSlug) return alert('Select a post first.');
+  if (!confirm('Delete this post from the local list?')) return;
+  posts = posts.filter(post => post.slug !== editingSlug);
+  renderPostList();
+  document.getElementById('editor-panel').classList.add('hidden');
+}
+
+async function downloadPostZip() {
+  try {
+    const post = getCurrentPostData();
+    const zip = new JSZip();
+    zip.file(`posts/${post.slug}.en.md`, document.getElementById('post-body-en').value || '');
+    zip.file(`posts/${post.slug}.hi.md`, document.getElementById('post-body-hi').value || '');
+    const currentIndex = [...posts];
+    const existing = currentIndex.findIndex(p => p.slug === post.slug);
+    const payload = { ...post, featured: existing === -1 ? !!(currentIndex.length === 0) : currentIndex[existing].featured || false };
+    if (existing >= 0) currentIndex[existing] = payload; else currentIndex.push(payload);
+    zip.file('posts/index.json', JSON.stringify(currentIndex, null, 2));
+    zip.file('site-config.json', JSON.stringify(config, null, 2));
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${post.slug}-bundle.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+async function commitToGitHub() {
+  const token = document.getElementById('gh-token').value.trim();
+  const user = document.getElementById('gh-user').value.trim();
+  if (!token || !user) return alert('Please enter GitHub username and PAT.');
+
+  try {
+    const post = getCurrentPostData();
+    const currentIndex = [...posts];
+    const existing = currentIndex.findIndex(p => p.slug === post.slug);
+    const payload = { ...post, featured: existing === -1 ? !!(currentIndex.length === 0) : currentIndex[existing].featured || false };
+    if (existing >= 0) currentIndex[existing] = payload; else currentIndex.push(payload);
+
+    const owner = 'amitt3069';
+    const repo = 'amitkt';
+    const repoInfo = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers: { Authorization: `token ${token}` } });
+    if (!repoInfo.ok) throw new Error('Github repo auth failed. Check PAT and repo access.');
+    const repoJson = await repoInfo.json();
+    const baseBranch = repoJson.default_branch;
+    const refUrl = `https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${baseBranch}`;
+    const refRes = await fetch(refUrl, { headers: { Authorization: `token ${token}` } });
+    const refJson = await refRes.json();
+    const baseSha = refJson.object.sha;
+    const newBranch = `posts-${Date.now()}`;
+    const branchRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs`, {
+      method: 'POST',
+      headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: `refs/heads/${newBranch}`, sha: baseSha })
+    });
+    if (!branchRes.ok) throw new Error('Could not create branch: ' + await branchRes.text());
+
+    const files = [
+      { path: `posts/${post.slug}.en.md`, content: document.getElementById('post-body-en').value || '' },
+      { path: `posts/${post.slug}.hi.md`, content: document.getElementById('post-body-hi').value || '' },
+      { path: 'posts/index.json', content: JSON.stringify(currentIndex, null, 2) },
+      { path: 'site-config.json', content: JSON.stringify(config, null, 2) }
+    ];
+
+    for (const file of files) {
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(file.path)}`;
+      const getRes = await fetch(`${url}?ref=${newBranch}`, { headers: { Authorization: `token ${token}` } });
+      if (getRes.ok) {
+        const existing = await getRes.json();
+        const putRes = await fetch(url, {
+          method: 'PUT',
+          headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: `Update ${file.path}`, content: btoa(unescape(encodeURIComponent(file.content))), sha: existing.sha, branch: newBranch })
+        });
+        if (!putRes.ok) throw new Error('Could not update ' + file.path + ': ' + await putRes.text());
+      } else {
+        const putRes = await fetch(url, {
+          method: 'PUT',
+          headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: `Add ${file.path}`, content: btoa(unescape(encodeURIComponent(file.content))), branch: newBranch })
+        });
+        if (!putRes.ok) throw new Error('Could not create ' + file.path + ': ' + await putRes.text());
+      }
+    }
+
+    const prRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls`, {
+      method: 'POST',
+      headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: `Publish ${post.slug}`, head: newBranch, base: baseBranch, body: 'Published from AmitKT admin UI.' })
+    });
+
+    if (!prRes.ok) {
+      alert('Branch created, but PR creation failed. Check the branch manually.');
+      return;
+    }
+
+    alert(`Published to branch ${newBranch} and opened a PR.`);
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+function bindEvents() {
+  document.getElementById('save-settings').addEventListener('click', saveSettings);
+  document.getElementById('download-settings').addEventListener('click', () => {
+    const next = { siteTitle: document.getElementById('cfg-title').value || 'AmitKT', siteSubtitle: document.getElementById('cfg-subtitle').value || 'Indian Politics', defaultAuthor: document.getElementById('cfg-author').value || 'Amit', headerImage: document.getElementById('cfg-header-image').value || '/assets/placeholder.svg', admin_password: document.getElementById('cfg-password').value || 'admin', default_language: document.getElementById('cfg-language').value || 'en', ad_code: document.getElementById('cfg-ad').value || '' };
+    downloadTextFile('site-config.json', JSON.stringify(next, null, 2));
+  });
+  document.getElementById('new-post').addEventListener('click', newPost);
+  document.getElementById('preview-post').addEventListener('click', previewPost);
+  document.getElementById('download-post').addEventListener('click', downloadPostZip);
+  document.getElementById('delete-post').addEventListener('click', deletePost);
+  document.getElementById('commit-github').addEventListener('click', commitToGitHub);
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    window.location.href = '/index.html';
+  });
+
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      btn.classList.add('active');
+      const target = btn.dataset.panel;
+      document.querySelectorAll('.panel-section').forEach(section => {
+        section.classList.toggle('hidden', section.id !== target && section.id !== 'editor-panel');
+      });
+    });
+  });
+}
+
+(async function init() {
+  await loadState();
+  bindEvents();
+})();
