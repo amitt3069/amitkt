@@ -1,0 +1,20 @@
+title: Indian Politics
+description: Articles, explainers and analysis on Indian politics, public policy, elections and the Constitution.
+url: "https://YOUR-USERNAME.github.io"
+baseurl: ""
+lang: en-IN
+timezone: Asia/Kolkata
+markdown: kramdown
+permalink: /:categories/:title/
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+defaults:
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: post
+      image: /assets/images/default-thumbnail.svg
+      author: Editorial Desk
+      lang: en-IN

@@ -1,0 +1,41 @@
+---
+layout: default
+---
+<section class="hero">
+  <p class="eyebrow">Politics · Policy · Public life</p>
+  <h1>Understand the issues shaping India.</h1>
+  <p class="hero-copy">Articles, explainers and analysis on Indian politics, public policy, elections and the Constitution.</p>
+</section>
+
+<section class="section-heading">
+  <div>
+    <p class="eyebrow">Latest articles</p>
+    <h2>Stories and explainers</h2>
+  </div>
+</section>
+
+<div class="article-grid">
+  {% assign sorted_posts = site.posts %}
+  {% for post in sorted_posts %}
+    <article class="article-card">
+      <a class="thumbnail-link" href="{{ post.url | relative_url }}" aria-label="Read {{ post.title | escape }}">
+        <img class="thumbnail" src="{{ post.image | default: '/assets/images/default-thumbnail.svg' | relative_url }}" alt="{{ post.image_alt | default: post.title | escape }}" loading="lazy">
+      </a>
+      <div class="card-body">
+        {% if post.categories.size > 0 %}
+          <p class="category-label">
+          {% for category in post.categories %}
+            <a href="{{ '/categories/' | append: category | append: '/' | relative_url }}">{{ category | replace: '-', ' ' | capitalize }}</a>{% unless forloop.last %}<span> · </span>{% endunless %}
+          {% endfor %}
+          </p>
+        {% endif %}
+        <h3><a href="{{ post.url | relative_url }}">{{ post.title | escape }}</a></h3>
+        <p class="card-excerpt">{{ post.description | default: post.excerpt | strip_html | truncate: 150 }}</p>
+        <a class="read-more" href="{{ post.url | relative_url }}">Read article →</a>
+      </div>
+    </article>
+  {% endfor %}
+</div>
+{% if site.posts.size == 0 %}
+  <p>No articles yet. Add your first Markdown article to the <code>_posts</code> folder. Instructions are in README.md.</p>
+{% endif %}

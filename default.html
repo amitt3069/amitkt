@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="{{ page.lang | default: site.lang | default: 'en-IN' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% seo %}
+  <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+  <link rel="alternate" type="application/atom+xml" title="{{ site.title }} feed" href="{{ '/feed.xml' | relative_url }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="{{ '/' | relative_url }}">{{ site.title }}</a>
+      <nav aria-label="Main navigation">
+        <a href="{{ '/' | relative_url }}">Home</a>
+        <a href="{{ '/categories/constitution/' | relative_url }}">Constitution</a>
+        <a href="{{ '/categories/elections/' | relative_url }}">Elections</a>
+        <a href="{{ '/categories/policies/' | relative_url }}">Policies</a>
+        <a href="{{ '/about/' | relative_url }}">About</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap main-content">
+    {{ content }}
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <p>© {{ site.time | date: "%Y" }} {{ site.title }}. Articles are provided for public information and discussion.</p>
+      <p><a href="{{ '/about/' | relative_url }}">About this website</a> · <a href="{{ '/feed.xml' | relative_url }}">RSS feed</a></p>
+    </div>
+  </footer>
+</body>
+</html>

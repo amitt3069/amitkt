@@ -1,0 +1,23 @@
+---
+layout: default
+---
+<section class="hero category-hero">
+  <p class="eyebrow">Topic</p>
+  <h1>{{ page.title }}</h1>
+  {% if page.description %}<p class="hero-copy">{{ page.description }}</p>{% endif %}
+</section>
+<div class="article-grid">
+  {% assign matching_posts = site.posts | where_exp: "post", "post.categories contains page.category_key" %}
+  {% for post in matching_posts %}
+    <article class="article-card">
+      <a class="thumbnail-link" href="{{ post.url | relative_url }}"><img class="thumbnail" src="{{ post.image | default: '/assets/images/default-thumbnail.svg' | relative_url }}" alt="{{ post.image_alt | default: post.title | escape }}" loading="lazy"></a>
+      <div class="card-body">
+        <p class="category-label">{{ page.title }}</p>
+        <h3><a href="{{ post.url | relative_url }}">{{ post.title | escape }}</a></h3>
+        <p class="card-excerpt">{{ post.description | default: post.excerpt | strip_html | truncate: 150 }}</p>
+        <a class="read-more" href="{{ post.url | relative_url }}">Read article →</a>
+      </div>
+    </article>
+  {% endfor %}
+</div>
+{% if matching_posts.size == 0 %}<p>There are no published articles in this category yet.</p>{% endif %}

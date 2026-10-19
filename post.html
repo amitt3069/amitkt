@@ -1,0 +1,28 @@
+---
+layout: default
+---
+<article class="post">
+  <header class="post-header">
+    <div class="category-label">
+      {% for category in page.categories %}
+        <a href="{{ '/categories/' | append: category | append: '/' | relative_url }}">{{ category | replace: '-', ' ' | capitalize }}</a>{% unless forloop.last %}<span> · </span>{% endunless %}
+      {% endfor %}
+    </div>
+    <h1>{{ page.title | escape }}</h1>
+    {% if page.description %}<p class="post-deck">{{ page.description }}</p>{% endif %}
+    <p class="post-meta">By {{ page.author | default: site.author | default: "Editorial Desk" }} · <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%-d %B %Y" }}</time></p>
+  </header>
+  {% if page.image %}
+    <figure class="post-hero-image">
+      <img src="{{ page.image | relative_url }}" alt="{{ page.image_alt | default: page.title | escape }}">
+      {% if page.image_caption %}<figcaption>{{ page.image_caption }}</figcaption>{% endif %}
+    </figure>
+  {% endif %}
+  <div class="post-content">
+    {{ content }}
+  </div>
+  <div class="article-end">
+    <p>Found this useful? Share the article or explore more topics.</p>
+    <a class="read-more" href="{{ '/' | relative_url }}">← Back to all articles</a>
+  </div>
+</article>
