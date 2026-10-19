@@ -1,0 +1,12 @@
+[
+  {
+    "slug": "example-article",
+    "title_en": "Example: Understanding a Political Issue",
+    "title_hi": "उदाहरण: एक राजनीतिक मुद्दे को समझना",
+    "thumbnail": "/assets/placeholder.svg",
+    "date": "2026-10-19",
+    "tags": ["analysis","india"],
+    "excerpt_en": "A short summary of the example article in English.",
+    "excerpt_hi": "हिंदी में संक्षिप्त सारांश।"
+  }
+]
