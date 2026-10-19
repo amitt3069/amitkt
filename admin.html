@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin — AmitKT</title>
+  <link rel="stylesheet" href="/css/site.css">
+  <style>
+    /* admin small tweaks */
+    .admin-wrap{padding:1rem}
+    .field{margin-bottom:.75rem}
+    label{display:block;font-weight:600;margin-bottom:.25rem}
+    input[type=text], textarea, select{width:100%;padding:.5rem;border:1px solid #e6e9ee;border-radius:6px}
+    .btn{display:inline-block;padding:.5rem .75rem;border-radius:8px;background:var(--accent);color:#fff;border:none;cursor:pointer}
+    .muted{color:#6b7280;font-size:.9rem}
+    .posts-list-admin{margin:1rem 0}
+    .post-row{display:flex;justify-content:space-between;align-items:center;padding:.5rem;border-bottom:1px solid #eef2f7}
+  </style>
+</head>
+<body>
+  <main class="container admin-wrap">
+    <h2>Admin — AmitKT</h2>
+    <div id="locked-ui">
+      <div class="field">
+        <label>Admin password (UI unlock)</label>
+        <input id="admin-pass" type="text" placeholder="Enter admin password">
+      </div>
+      <button id="unlock" class="btn">Unlock</button>
+      <p class="muted">Note: This password only hides the admin UI on this page. For repository changes, you'll be asked for a GitHub Personal Access Token.</p>
+    </div>
+
+    <div id="admin-ui" hidden>
+      <section>
+        <h3>Site settings</h3>
+        <div class="field"><label>Site title</label><input id="cfg-title" type="text"></div>
+        <div class="field"><label>Default author</label><input id="cfg-author" type="text"></div>
+        <div class="field"><label>Header image URL</label><input id="cfg-header-image" type="text"></div>
+        <div class="field"><label>Ad code (paste snippet)</label><textarea id="cfg-ad" rows="3"></textarea></div>
+        <div class="field"><label>Allow image uploads</label><select id="cfg-uploads"><option value="true">Yes</option><option value="false">No</option></select></div>
+        <button id="save-settings" class="btn">Save settings (download or commit)</button>
+      </section>
+
+      <hr>
+
+      <section>
+        <h3>Posts</h3>
+        <div class="posts-list-admin" id="posts-admin-list"></div>
+        <button id="new-post" class="btn">+ New post</button>
+      </section>
+
+      <hr>
+
+      <section id="editor-section" hidden>
+        <h3 id="editor-title">New post</h3>
+        <div class="field"><label>Slug (url-safe)</label><input id="post-slug" type="text"></div>
+        <div class="field"><label>Title (EN)</label><input id="post-title-en" type="text"></div>
+        <div class="field"><label>Title (HI)</label><input id="post-title-hi" type="text"></div>
+        <div class="field"><label>Thumbnail URL</label><input id="post-thumb" type="text"></div>
+        <div class="field"><label>Date</label><input id="post-date" type="text" placeholder="YYYY-MM-DD"></div>
+        <div class="field"><label>Tags (comma separated)</label><input id="post-tags" type="text"></div>
+        <div class="field"><label>Excerpt (EN)</label><textarea id="post-excerpt-en" rows="2"></textarea></div>
+        <div class="field"><label>Excerpt (HI)</label><textarea id="post-excerpt-hi" rows="2"></textarea></div>
+        <div class="field"><label>Body (EN Markdown)</label><textarea id="post-body-en" rows="8"></textarea></div>
+        <div class="field"><label>Body (HI Markdown)</label><textarea id="post-body-hi" rows="8"></textarea></div>
+
+        <div class="field"><label>Image upload (optional)</label><input id="image-file" type="file" accept="image/*"></div>
+
+        <div style="display:flex;gap:.5rem">
+          <button id="preview-post" class="btn">Preview</button>
+          <button id="download-zip" class="btn">Download ZIP</button>
+          <button id="commit-github" class="btn">Commit to GitHub (requires PAT)</button>
+          <button id="delete-post" class="btn" style="background:#ef4444">Delete</button>
+        </div>
+
+        <div id="preview-area" style="margin-top:1rem;background:#fff;padding:1rem;border-radius:8px"></div>
+
+      </section>
+
+      <hr>
+
+      <section>
+        <h3>GitHub publish</h3>
+        <div class="field"><label>GitHub username</label><input id="gh-user" type="text"></div>
+        <div class="field"><label>Personal Access Token (paste, it will only be used in browser)</label><input id="gh-token" type="password"></div>
+        <div class="muted">Token needs repo scope for private repos or public_repo for public repos. We will create a branch and open a PR by default.</div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://stuk.github.io/jszip/dist/jszip.min.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>
