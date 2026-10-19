@@ -1,32 +1,37 @@
 # AmitKT — Indian Politics
 
-This repository now contains a lightweight static site and an admin UI to manage posts.
+This repository contains a modern, lightweight journalism/news-style static website with a browser-based admin UI and multilingual article support.
 
-How to use
+## What is included
 
-1. Review the branch `add-static-admin` and open the admin page at `/admin.html` (once deployed on GitHub Pages use `https://<username>.github.io/amitkt/admin.html`).
-2. Unlock the admin UI using the default password `admin` (UI gate only). Change the password in `site-config.json` after first login if desired.
-3. To publish posts from the admin UI using the Direct Commit feature, create a GitHub Personal Access Token (PAT) with `public_repo` scope (or `repo` for private repos). Paste it into the admin publish section when committing.
-4. The admin supports:
-   - Creating posts in English and Hindi (files saved as `posts/<slug>.en.md` and `posts/<slug>.hi.md`).
-   - Updating `posts/index.json` which drives the homepage.
-   - Updating `site-config.json` for site title, header image, and ad snippet.
-   - Downloading a ZIP containing the post and updated index if you prefer manual pushes.
+- premium editorial homepage with hero story, feature cards, latest stories, sidebar, ad placeholders
+- English and Hindi article support
+- admin page to manage site settings and content
+- direct publish flow using a GitHub PAT from the browser
+- static hosting ready for GitHub Pages
 
-Security notes
+## Open the site
 
-- The admin page uses a client-side password only as a UI unlock. It does NOT protect repository access.
-- If using Direct Commit, do NOT store PATs in the repository. The admin page uses the PAT only in the browser session to call the GitHub API.
+- local preview: http://localhost:8000/index.html
+- admin preview: http://localhost:8000/admin.html
 
-Enable GitHub Pages
+## Use the admin page
 
-1. Go to your repository Settings → Pages and set the source branch to `gh-pages` or `main` (after merging). For now, merge `add-static-admin` into your default branch, then enable Pages to serve from the root.
-2. After enabling, visit `https://<username>.github.io/amitkt/` to view the site.
+1. Open `/admin.html`.
+2. Enter the default password: `admin`.
+3. Create or edit articles.
+4. Save site settings, preview content, or download a ZIP.
+5. For GitHub publishing, paste a PAT in the Publish panel. The app creates a branch and opens a PR.
 
-Notes & next steps
+## GitHub Pages
 
-- I implemented a lightweight client-side renderer (marked.js) and search (Fuse.js) for fast browsing without a backend.
-- If you want pre-rendered per-post HTML files (for better SEO and social sharing), I can add a GitHub Action to generate HTML pages for each post on push.
-- I can also add Google AdSense and analytics placeholders where you want them.
+Once you merge this branch into the default branch and enable GitHub Pages, the site will be published at:
 
-If you'd like, I can now open a Pull Request with these changes on branch `add-static-admin` (recommended).
+- https://amitt3069.github.io/amitkt/
+- https://amitt3069.github.io/amitkt/admin.html
+
+## Notes
+
+- The UI password is only a browser lock. It does not secure GitHub repo access.
+- For publish flows, never store tokens in the repo.
+- All content is file-based and lightweight, which makes deployment simple and fast.

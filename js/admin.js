@@ -1,111 +1,260 @@
-// admin.js - minimal admin UI with download and GitHub commit
-const CONFIG_PATH = '/site-config.json';
-const POSTS_INDEX = '/posts/index.json';
-let siteConfig = {};
-let postsIndex = [];
-let editing = null;
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin | AmitKT</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css" />
+  <style>
+    body { background: var(--bg); }
+    .admin-shell {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 30px 16px 60px;
+    }
+    .admin-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .admin-header {
+      padding: 24px 24px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .admin-header h1 { margin: 0; font-size: clamp(1.8rem, 2vw, 2.4rem); }
+    .admin-body {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 0;
+    }
+    .sidebar-nav {
+      background: var(--panel-alt);
+      border-right: 1px solid var(--line);
+      padding: 18px;
+    }
+    .nav-section-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 12px; }
+    .nav-item {
+      display: block;
+      padding: 12px 12px;
+      border-radius: 12px;
+      color: var(--secondary);
+      font-weight: 600;
+      margin-bottom: 8px;
+      cursor: pointer;
+      background: transparent;
+      border: 1px solid transparent;
+    }
+    .nav-item.active {
+      background: var(--panel);
+      border-color: var(--line);
+      color: var(--primary);
+    }
+    .content-area { padding: 22px; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .field { display: flex; flex-direction: column; gap: 8px; }
+    .field.full { grid-column: 1 / -1; }
+    label { font-size: 0.85rem; color: var(--muted); font-weight: 700; }
+    input, textarea, select {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      color: var(--primary);
+      padding: 12px 14px;
+      width: 100%;
+    }
+    textarea { min-height: 115px; resize: vertical; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 11px 16px;
+      background: #0f172a;
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn.secondary { background: var(--panel-alt); color: var(--primary); border: 1px solid var(--line); }
+    .btn.danger { background: #b91c1c; }
+    .muted { color: var(--muted); font-size: 0.87rem; }
+    .post-list { margin-top: 12px; display: grid; gap: 12px; }
+    .post-item {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--panel-alt);
+    }
+    .preview-box {
+      background: var(--panel-alt);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      margin-top: 18px;
+    }
+    .preview-box h3 { margin-top: 0; }
+    @media (max-width: 820px) {
+      .admin-body { grid-template-columns: 1fr; }
+      .sidebar-nav { border-right: none; border-bottom: 1px solid var(--line); }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-shell">
+    <div class="admin-panel">
+      <div class="admin-header">
+        <h1>AmitKT Admin</h1>
+        <button class="btn secondary" id="logout-btn">Logout</button>
+      </div>
 
-async function loadConfigAndIndex(){
-  try{ siteConfig = await (await fetch(CONFIG_PATH)).json(); }catch(e){ siteConfig = {}; }
-  try{ postsIndex = await (await fetch(POSTS_INDEX)).json(); }catch(e){ postsIndex = []; }
-  renderSettings(); renderPostsList();
-}
+      <div class="admin-body">
+        <aside class="sidebar-nav">
+          <div class="nav-section-title">Navigation</div>
+          <button class="nav-item active" data-panel="settings-panel">Site settings</button>
+          <button class="nav-item" data-panel="posts-panel">Posts</button>
+          <button class="nav-item" data-panel="publish-panel">Publish</button>
+        </aside>
 
-function renderSettings(){ document.getElementById('cfg-title').value = siteConfig.siteTitle || ''; document.getElementById('cfg-author').value = siteConfig.defaultAuthor || ''; document.getElementById('cfg-header-image').value = siteConfig.headerImage || ''; document.getElementById('cfg-ad').value = siteConfig.ad_code || ''; document.getElementById('cfg-uploads').value = siteConfig.allow_image_uploads? 'true':'false'; }
+        <div class="content-area">
+          <section id="settings-panel" class="panel-section">
+            <div class="form-grid">
+              <div class="field">
+                <label for="cfg-title">Site title</label>
+                <input id="cfg-title" type="text" />
+              </div>
+              <div class="field">
+                <label for="cfg-subtitle">Subtitle</label>
+                <input id="cfg-subtitle" type="text" />
+              </div>
+              <div class="field">
+                <label for="cfg-author">Default author</label>
+                <input id="cfg-author" type="text" />
+              </div>
+              <div class="field">
+                <label for="cfg-header-image">Header image URL</label>
+                <input id="cfg-header-image" type="text" />
+              </div>
+              <div class="field full">
+                <label for="cfg-ad">Ad code / snippet</label>
+                <textarea id="cfg-ad"></textarea>
+              </div>
+              <div class="field">
+                <label for="cfg-password">Admin password</label>
+                <input id="cfg-password" type="text" />
+              </div>
+              <div class="field">
+                <label for="cfg-language">Default language</label>
+                <select id="cfg-language">
+                  <option value="en">English</option>
+                  <option value="hi">Hindi</option>
+                </select>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn" id="save-settings">Save settings</button>
+              <button class="btn secondary" id="download-settings">Download settings</button>
+            </div>
+          </section>
 
-function renderPostsList(){ const wrap = document.getElementById('posts-admin-list'); wrap.innerHTML=''; postsIndex.forEach(p=>{ const row = document.createElement('div'); row.className='post-row'; row.innerHTML = `<div><strong>${p.title_en||p.slug}</strong> <div class="muted">${p.date} • ${p.tags? p.tags.join(', '):''}</div></div>`;
-  const actions = document.createElement('div'); const edit = document.createElement('button'); edit.textContent='Edit'; edit.className='btn'; edit.addEventListener('click',()=> openEditor(p.slug)); actions.appendChild(edit);
-  row.appendChild(actions); wrap.appendChild(row);
-  }) }
+          <section id="posts-panel" class="panel-section hidden">
+            <div class="btn-row" style="margin-top:0;">
+              <button class="btn" id="new-post">New post</button>
+            </div>
+            <div id="post-list" class="post-list"></div>
+          </section>
 
-function openEditor(slug){ editing = postsIndex.find(x=>x.slug===slug); document.getElementById('editor-section').hidden=false; document.getElementById('editor-title').textContent = 'Edit ' + slug; document.getElementById('post-slug').value = editing.slug; document.getElementById('post-title-en').value = editing.title_en||''; document.getElementById('post-title-hi').value = editing.title_hi||''; document.getElementById('post-thumb').value = editing.thumbnail||''; document.getElementById('post-date').value = editing.date||''; document.getElementById('post-tags').value = (editing.tags||[]).join(','); document.getElementById('post-excerpt-en').value = editing.excerpt_en||''; document.getElementById('post-excerpt-hi').value = editing.excerpt_hi||'';
-  // load bodies
-  fetch(`/posts/${slug}.en.md`).then(r=>r.text()).then(t=>document.getElementById('post-body-en').value = t).catch(()=>{});
-  fetch(`/posts/${slug}.hi.md`).then(r=>r.text()).then(t=>document.getElementById('post-body-hi').value = t).catch(()=>{});
-}
+          <section id="publish-panel" class="panel-section hidden">
+            <div class="form-grid">
+              <div class="field">
+                <label for="gh-user">GitHub username</label>
+                <input id="gh-user" type="text" />
+              </div>
+              <div class="field">
+                <label for="gh-token">Personal Access Token</label>
+                <input id="gh-token" type="password" />
+              </div>
+            </div>
+            <div class="muted" style="margin-top:12px;">Use a token with repo or public_repo access. The app creates a branch and opens a PR for safer publishing.</div>
+            <div class="btn-row">
+              <button class="btn" id="commit-github">Commit and open PR</button>
+            </div>
+          </section>
 
-function newPost(){ editing = null; document.getElementById('editor-section').hidden=false; document.getElementById('editor-title').textContent='New post'; ['post-slug','post-title-en','post-title-hi','post-thumb','post-date','post-tags','post-excerpt-en','post-excerpt-hi','post-body-en','post-body-hi'].forEach(id=>document.getElementById(id).value=''); }
+          <section id="editor-panel" class="panel-section hidden" style="margin-top: 20px;">
+            <h2 id="editor-title">Edit article</h2>
+            <div class="form-grid">
+              <div class="field">
+                <label>Slug</label>
+                <input id="post-slug" type="text" />
+              </div>
+              <div class="field">
+                <label>Category</label>
+                <select id="post-category">
+                  <option value="National">National</option>
+                  <option value="Elections">Elections</option>
+                  <option value="Policy">Policy</option>
+                  <option value="Analysis">Analysis</option>
+                  <option value="Opinion">Opinion</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Title (English)</label>
+                <input id="post-title-en" type="text" />
+              </div>
+              <div class="field">
+                <label>Title (Hindi)</label>
+                <input id="post-title-hi" type="text" />
+              </div>
+              <div class="field">
+                <label>Thumbnail URL</label>
+                <input id="post-thumb" type="text" />
+              </div>
+              <div class="field">
+                <label>Date</label>
+                <input id="post-date" type="text" placeholder="YYYY-MM-DD" />
+              </div>
+              <div class="field full">
+                <label>Excerpt (English)</label>
+                <textarea id="post-excerpt-en"></textarea>
+              </div>
+              <div class="field full">
+                <label>Excerpt (Hindi)</label>
+                <textarea id="post-excerpt-hi"></textarea>
+              </div>
+              <div class="field full">
+                <label>Body (English Markdown)</label>
+                <textarea id="post-body-en"></textarea>
+              </div>
+              <div class="field full">
+                <label>Body (Hindi Markdown)</label>
+                <textarea id="post-body-hi"></textarea>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn" id="preview-post">Preview</button>
+              <button class="btn secondary" id="download-post">Download ZIP</button>
+              <button class="btn danger" id="delete-post">Delete</button>
+            </div>
+            <div id="preview-box" class="preview-box"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
 
-function collectPost(){ const slug = document.getElementById('post-slug').value.trim(); if(!slug) throw new Error('Slug required'); const obj = { slug, title_en: document.getElementById('post-title-en').value.trim(), title_hi: document.getElementById('post-title-hi').value.trim(), thumbnail: document.getElementById('post-thumb').value.trim(), date: document.getElementById('post-date').value.trim() || new Date().toISOString().slice(0,10), tags: document.getElementById('post-tags').value.split(',').map(s=>s.trim()).filter(Boolean), excerpt_en: document.getElementById('post-excerpt-en').value.trim(), excerpt_hi: document.getElementById('post-excerpt-hi').value.trim() };
-  return obj;
-}
-
-async function previewPost(){ const p = collectPost(); const en = document.getElementById('post-body-en').value; const hi = document.getElementById('post-body-hi').value; document.getElementById('preview-area').innerHTML = `<h3>${p.title_en}</h3>` + marked.parse(en || hi || ''); }
-
-async function downloadZIP(){ const p = collectPost(); const en = document.getElementById('post-body-en').value; const hi = document.getElementById('post-body-hi').value; const zip = new JSZip(); zip.file(`posts/${p.slug}.en.md`, en || ''); zip.file(`posts/${p.slug}.hi.md`, hi || ''); // update index
-  const updatedIndex = updateIndexFor(p, false);
-  zip.file('posts/index.json', JSON.stringify(updatedIndex, null, 2)); zip.file('site-config.json', JSON.stringify(collectSiteConfig(), null, 2)); const content = await zip.generateAsync({type:'blob'}); const url = URL.createObjectURL(content); const a = document.createElement('a'); a.href = url; a.download = `${p.slug}-post.zip`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
-
-function collectSiteConfig(){ return { siteTitle: document.getElementById('cfg-title').value.trim(), defaultAuthor: document.getElementById('cfg-author').value.trim(), headerImage: document.getElementById('cfg-header-image').value.trim(), ad_code: document.getElementById('cfg-ad').value, allow_image_uploads: document.getElementById('cfg-uploads').value==='true' } }
-
-function updateIndexFor(post, replaceExisting=true){ const idx = postsIndex.slice(); const found = idx.find(i=>i.slug===post.slug); const meta = {
-  slug: post.slug,
-  title_en: post.title_en || '',
-  title_hi: post.title_hi || '',
-  thumbnail: post.thumbnail || '',
-  date: post.date,
-  tags: post.tags || [],
-  excerpt_en: post.excerpt_en || '',
-  excerpt_hi: post.excerpt_hi || ''
-};
-  if(found){ Object.assign(found, meta); }
-  else { idx.push(meta); }
-  // save to local for download/commit
-  postsIndex = idx; renderPostsList(); return idx;
-}
-
-async function commitToGitHub(){
-  const token = document.getElementById('gh-token').value.trim(); const user = document.getElementById('gh-user').value.trim(); if(!token || !user) return alert('Provide GitHub username and token');
-  const owner = 'amitt3069'; const repo = 'amitkt';
-  const branchName = `posts-update-${Date.now()}`;
-  // get default branch sha
-  const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {headers: {Authorization: 'token '+token}});
-  if(!repoRes.ok) return alert('Failed to fetch repo info: '+await repoRes.text());
-  const repoJson = await repoRes.json(); const base = repoJson.default_branch;
-  const refRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${base}`, {headers: {Authorization: 'token '+token}});
-  const refJson = await refRes.json(); const baseSha = refJson.object.sha;
-  // create branch
-  const createRef = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs`, {method:'POST', headers:{Authorization: 'token '+token,'Content-Type':'application/json'}, body: JSON.stringify({ref:`refs/heads/${branchName}`, sha: baseSha})});
-  if(!createRef.ok) return alert('Failed to create branch: '+await createRef.text());
-  // collect files to commit
-  const p = collectPost(); const en = document.getElementById('post-body-en').value; const hi = document.getElementById('post-body-hi').value; updateIndexFor(p,true);
-  const files = [];
-  files.push({path:`posts/${p.slug}.en.md`, content: btoa(unescape(encodeURIComponent(en || '')))});
-  files.push({path:`posts/${p.slug}.hi.md`, content: btoa(unescape(encodeURIComponent(hi || '')))});
-  files.push({path:`posts/index.json`, content: btoa(unescape(encodeURIComponent(JSON.stringify(postsIndex, null, 2))))});
-  files.push({path:`site-config.json`, content: btoa(unescape(encodeURIComponent(JSON.stringify(collectSiteConfig(), null, 2))))});
-
-  // create or update files via PUT with branch
-  for(const f of files){
-    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(f.path)}`;
-    // check existing
-    const getRes = await fetch(url+'?ref='+base, {headers:{Authorization: 'token '+token}});
-    if(getRes.ok){ const getJson = await getRes.json(); const sha = getJson.sha; const putRes = await fetch(url, {method:'PUT', headers:{Authorization: 'token '+token,'Content-Type':'application/json'}, body: JSON.stringify({message:`Update ${f.path}`, content: f.content, branch: branchName, sha})}); if(!putRes.ok) return alert('Failed to update '+f.path+': '+await putRes.text()); }
-    else{
-      const putRes = await fetch(url, {method:'PUT', headers:{Authorization: 'token '+token,'Content-Type':'application/json'}, body: JSON.stringify({message:`Add ${f.path}`, content: f.content, branch: branchName})}); if(!putRes.ok) return alert('Failed to create '+f.path+': '+await putRes.text()); }
-  }
-
-  // create PR
-  const pr = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls`, {method:'POST', headers:{Authorization: 'token '+token,'Content-Type':'application/json'}, body: JSON.stringify({title:`Add/Update post ${p.slug}`, head:branchName, base: base, body:`Created by admin UI`})});
-  if(!pr.ok) return alert('Failed to create PR: '+await pr.text());
-  alert('Created branch '+branchName+' and opened a PR.');
-}
-
-// basic delete post (local index update only)
-function deletePost(){ if(!editing) return alert('Select a post'); if(!confirm('Delete post? This will remove it from index.json on next commit.')) return; postsIndex = postsIndex.filter(p=>p.slug!==editing.slug); renderPostsList(); document.getElementById('editor-section').hidden=true; }
-
-// image upload to repo (requires token) - optional
-async function uploadImageToRepo(file, token){ const owner='amitt3069', repo='amitkt', path=`assets/uploads/${Date.now()}-${file.name}`; const data = await file.arrayBuffer(); const b64 = btoa(String.fromCharCode(...new Uint8Array(data))); const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`, {method:'PUT', headers:{Authorization:'token '+token,'Content-Type':'application/json'}, body: JSON.stringify({message:`upload ${file.name}`, content: b64, branch: (await (await fetch(`https://api.github.com/repos/${owner}/${repo}`, {headers:{Authorization:'token '+token}})).json()).default_branch})}); if(!res.ok) throw new Error(await res.text()); const j = await res.json(); return j.content.download_url || `/${path}`; }
-
-// event wiring
-document.getElementById('unlock').addEventListener('click', ()=>{ const pass = document.getElementById('admin-pass').value; (async()=>{ await loadConfigAndIndex(); const allowed = siteConfig.admin_password || 'admin'; if(pass===allowed){ document.getElementById('locked-ui').hidden=true; document.getElementById('admin-ui').hidden=false; } else alert('Wrong password'); })(); });
-document.getElementById('new-post').addEventListener('click', newPost);
-document.getElementById('preview-post').addEventListener('click', previewPost);
-document.getElementById('download-zip').addEventListener('click', downloadZIP);
-document.getElementById('commit-github').addEventListener('click', commitToGitHub);
-document.getElementById('save-settings').addEventListener('click', ()=>{ const cfg = collectSiteConfig(); const zip = new JSZip(); zip.file('site-config.json', JSON.stringify(cfg, null, 2)); zip.generateAsync({type:'blob'}).then(blob=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='site-config.json'; document.body.appendChild(a); a.click(); a.remove(); }); });
-document.getElementById('delete-post').addEventListener('click', deletePost);
-
-// initial load
-loadConfigAndIndex();
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://stuk.github.io/jszip/dist/jszip.min.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

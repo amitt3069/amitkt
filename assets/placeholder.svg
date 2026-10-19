@@ -1,10 +1,14 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='400' viewBox='0 0 1200 400'>
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='640' viewBox='0 0 1200 640'>
   <defs>
-    <linearGradient id='g' x1='0' x2='1'>
-      <stop offset='0' stop-color='#0ea5e9'/>
-      <stop offset='1' stop-color='#6366f1'/>
+    <linearGradient id='bg' x1='0' x2='1'>
+      <stop offset='0' stop-color='#0f172a'/>
+      <stop offset='1' stop-color='#1d4ed8'/>
     </linearGradient>
   </defs>
-  <rect width='1200' height='400' fill='url(#g)' rx='8' />
-  <text x='50' y='220' font-family='Arial, Helvetica, sans-serif' font-size='48' fill='#fff'>AmitKT — Indian Politics</text>
+  <rect width='1200' height='640' fill='url(#bg)'/>
+  <circle cx='980' cy='120' r='190' fill='rgba(255,255,255,0.08)'/>
+  <rect x='70' y='120' width='440' height='310' rx='26' fill='rgba(255,255,255,0.06)'/>
+  <text x='90' y='240' fill='white' font-family='Arial, sans-serif' font-size='62' font-weight='700'>AmitKT</text>
+  <text x='90' y='300' fill='rgba(255,255,255,0.9)' font-family='Arial, sans-serif' font-size='28'>Indian Politics</text>
+  <text x='90' y='350' fill='rgba(255,255,255,0.7)' font-family='Arial, sans-serif' font-size='22'>Analysis • Opinion • Elections</text>
 </svg>
